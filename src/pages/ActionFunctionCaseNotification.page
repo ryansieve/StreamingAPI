@@ -1,0 +1,105 @@
+<apex:page controller="ActionFunctionCaseNotificationController" id="page" tabStyle="Case">
+	
+	<apex:includeScript value="{!$Resource.cometd}"/>
+    <apex:includeScript value="{!$Resource.jquery}"/>
+    <apex:includeScript value="{!$Resource.json2}"/>
+    <apex:includeScript value="{!$Resource.jquery_cometd}"/>
+    
+    <script type="text/javascript">
+    	var j$ = jQuery.noConflict();
+	    j$(document).ready(function() {
+            // Connect to the CometD endpoint 
+    
+            j$.cometd.init({
+               url: window.location.protocol+'//'+window.location.hostname+'/cometd/28.0/',
+               requestHeaders: { Authorization: 'OAuth {!$Api.Session_ID}'}
+           	});
+
+           	j$.cometd.subscribe('/topic/CaseNotifications', function(message) {
+	    		findCaseDetails(message.data.sobject.Id);
+            });
+            
+        });
+	</script>
+	
+	<style>
+		.panelLeft {
+	    	width: 25%;
+	    	vertical-align: top;
+	    }
+	    .panelRight {
+	    	width: 75%;
+	    	vertical-align: top;
+	    }
+	</style>
+	
+   	<apex:sectionHeader title="Action Function" subTitle="Case Notifications" />
+   	<apex:form id="form">
+   		
+   		<apex:panelGrid columns="2" width="100%" columnClasses="panelLeft,panelRight">
+	   		<apex:panelGroup >
+		   		<apex:pageBlock title="Case Status">
+		   				
+					<apex:chart data="{!statusData}" height="200" width="250" background="#F5F5F5">
+					    <apex:legend position="bottom"/>
+					    <apex:pieSeries labelField="value" dataField="nRecs" donut="50">
+					        <apex:chartLabel display="middle" orientation="vertical" 
+					            font="bold 12px Helvetica"/>
+					    </apex:pieSeries>
+					</apex:chart>
+					
+				</apex:pageBlock>
+				<apex:pageBlock title="Case Priority">	
+					
+					<apex:chart data="{!priorityData}" height="200" width="250" background="#F5F5F5">
+					    <apex:legend position="bottom"/>
+					    <apex:pieSeries labelField="value" dataField="nRecs" donut="50">
+					        <apex:chartLabel display="middle" orientation="vertical" 
+					            font="bold 12px Helvetica"/>
+					    </apex:pieSeries>
+					</apex:chart>
+		   				
+		   		</apex:pageBlock>
+	   		</apex:panelGroup>
+	   		
+			<apex:pageBlock title="Recent Case Updates">
+				<apex:outputPanel layout="block" style="height:500px;overflow-y:scroll;">
+					<apex:repeat value="{!cases}" var="cw">
+						<apex:pageBlockSection title="{!cw.c.caseNumber}" columns="2">
+							<apex:outputField value="{!cw.c.caseNumber}"/>
+							<apex:outputField value="{!cw.c.status}"/>
+							<apex:outputField value="{!cw.c.priority}"/>
+							<apex:pageBlockSectionItem >
+								<apex:outputLabel value="Owner Name"/>
+								<apex:outputField value="{!cw.c.owner.name}"/>
+							</apex:pageBlockSectionItem>
+							<apex:pageBlockSectionItem >
+								<apex:outputLabel value="Account Name"/>
+								<apex:outputField value="{!cw.c.account.name}"/>
+							</apex:pageBlockSectionItem>
+							<apex:pageBlockSectionItem >
+								<apex:outputLabel value="Contact Name"/>
+								<apex:outputField value="{!cw.c.contact.name}"/>
+							</apex:pageBlockSectionItem>
+						</apex:pageBlockSection>
+						<apex:pageBlockSection columns="1">
+							<apex:pageBlockTable value="{!cw.c.CaseComments}" var="cc" rendered="{!cw.c.CaseComments.size > 0}">
+								<apex:column value="{!cc.createdBy.Name}"/>
+								<apex:column value="{!cc.createdDate}"/>
+								<apex:column value="{!cc.commentBody}"/>
+							</apex:pageBlockTable>
+							<apex:outputText value="There are no comments on this case." rendered="{!cw.c.CaseComments.size == 0}" style="font-weight:bold"/>
+						</apex:pageBlockSection>
+					</apex:repeat>
+					</apex:outputPanel>
+			</apex:pageBlock>
+			
+		</apex:panelGrid>
+		
+		<apex:actionFunction action="{!addCaseId}" name="findCaseDetails" rerender="form">
+	        <apex:param name="caseId" assignTo="{!caseId}" value="" />
+	    </apex:actionFunction>
+	    
+	</apex:form>
+	
+</apex:page>

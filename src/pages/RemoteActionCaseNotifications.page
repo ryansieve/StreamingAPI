@@ -1,0 +1,67 @@
+<apex:page id="page" controller="RemoteActionCaseNotificationsController" tabstyle="case">
+
+	<apex:includeScript value="{!$Resource.cometd}"/>
+    <apex:includeScript value="{!$Resource.jquery}"/>
+    <apex:includeScript value="{!$Resource.json2}"/>
+    <apex:includeScript value="{!$Resource.jquery_cometd}"/>
+    
+    <script type="text/javascript">
+    	
+	    var j$ = jQuery.noConflict();
+	    j$(document).ready(function() {
+	 
+	        j$.cometd.init({
+	            url: window.location.protocol+'//'+window.location.hostname+'/cometd/28.0/',
+	            requestHeaders: { Authorization: 'OAuth {!$Api.Session_ID}'}
+			});
+	
+           	j$.cometd.subscribe('/topic/CaseNotifications', function(message) {
+	    		getRemoteCase(message.data.sobject.Id);
+            });
+	            
+            function getRemoteCase(caseId) {
+		        Visualforce.remoting.Manager.invokeAction(
+	            	'{!$RemoteAction.RemoteActionCaseNotificationsController.returnCase}',
+		            caseId, 
+	            	function(result, event){
+		                if (event.status) {
+							document.getElementById('{!$Component.page.block.casenumber}').innerText = result.CaseNumber;
+				    		document.getElementById('{!$Component.page.block.casestatus}').innerText = result.Status;
+				    		document.getElementById('{!$Component.page.block.casepriority}').innerText = result.Priority;
+				    		document.getElementById('{!$Component.page.block.caseowner}').innerText = result.Owner.Name;
+				    		document.getElementById('{!$Component.page.block.accountname}').innerText = result.Account.Name;
+				    		document.getElementById('{!$Component.page.block.contactname}').innerText = result.Contact.Name;
+		                } else if (event.type === 'exception') {
+		                    document.getElementById("responseErrors").innerHTML = 
+		                        event.message + "<br/>\n<pre>" + event.where + "</pre>";
+		                } else {
+		                    document.getElementById("responseErrors").innerHTML = event.message;
+		                }
+		            }, 
+		            {escape: true}
+		        );
+		    }
+	   })
+   </script>
+   
+   	<apex:sectionHeader title="Remote Action" subTitle="Case Notifications"/>
+	<apex:pageBlock id="block">
+		<apex:panelGrid columns="2">
+			<apex:outputLabel value="Case Number: " for="casenumber" style="font-weight: bold;"/>
+			<apex:outputText value="" id="casenumber"/>
+			<apex:outputLabel value="Case Status:  " for="casestatus" style="font-weight: bold;"/>
+			<apex:outputText value="" id="casestatus"/>
+			<apex:outputLabel value="Case Priority:  " for="casepriority" style="font-weight: bold;"/>
+			<apex:outputText value="" id="casepriority"/>
+			<apex:outputLabel value="Case Owner:  " for="caseowner" style="font-weight: bold;"/>
+			<apex:outputText value="" id="caseowner"/>
+			<apex:outputLabel value="Account Name:  " for="accountname" style="font-weight: bold;"/>
+			<apex:outputText value="" id="accountname"/>
+			<apex:outputLabel value="Contact Name:  " for="contactname" style="font-weight: bold;"/>
+			<apex:outputText value="" id="contactname"/>
+		</apex:panelGrid>
+	</apex:pageBlock>
+	
+	<apex:outputPanel layout="block" id="responseErrors"></apex:outputPanel>
+	
+</apex:page>
