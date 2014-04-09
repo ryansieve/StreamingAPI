@@ -1,0 +1,61 @@
+<apex:page controller="ActionFunctionCaseNotificationController" sidebar="false" showHeader="false" id="page" tabStyle="Case">
+	
+	<apex:includeScript value="{!$Resource.cometd}"/>
+    <apex:includeScript value="{!$Resource.jquery}"/>
+    <apex:includeScript value="{!$Resource.json2}"/>
+    <apex:includeScript value="{!$Resource.jquery_cometd}"/>
+    
+    <script type="text/javascript">
+    	var j$ = jQuery.noConflict();
+	    j$(document).ready(function() {
+            // Connect to the CometD endpoint 
+    
+            j$.cometd.init({
+               url: window.location.protocol+'//'+window.location.hostname+'/cometd/28.0/',
+               requestHeaders: { Authorization: 'OAuth {!$Api.Session_ID}'}
+           	});
+
+           	j$.cometd.subscribe('/topic/CaseNotifications', function(message) {
+	    		findCaseDetails(message.data.sobject.Id);
+            });
+            
+        });
+	</script>
+	
+   	<apex:form id="form">
+   		
+   		<apex:panelGrid columns="1">
+	   		<apex:panelGroup >
+		   		<apex:pageBlock title="Case Status">
+		   				
+					<apex:chart data="{!statusData}" height="180" width="325" background="#F5F5F5">
+					    <apex:legend position="bottom"/>
+					    <apex:pieSeries labelField="value" dataField="nRecs" donut="50">
+					        <apex:chartLabel display="middle" orientation="vertical" 
+					            font="bold 12px Helvetica"/>
+					    </apex:pieSeries>
+					</apex:chart>
+					
+				</apex:pageBlock>
+				<apex:pageBlock title="Case Priority">	
+					
+					<apex:chart data="{!priorityData}" height="180" width="325" background="#F5F5F5">
+					    <apex:legend position="bottom"/>
+					    <apex:pieSeries labelField="value" dataField="nRecs" donut="50">
+					        <apex:chartLabel display="middle" orientation="vertical" 
+					            font="bold 12px Helvetica"/>
+					    </apex:pieSeries>
+					</apex:chart>
+		   				
+		   		</apex:pageBlock>
+	   		</apex:panelGroup>
+			
+		</apex:panelGrid>
+		
+		<apex:actionFunction action="{!addCaseId}" name="findCaseDetails" rerender="form">
+	        <apex:param name="caseId" assignTo="{!caseId}" value="" />
+	    </apex:actionFunction>
+	    
+	</apex:form>
+	
+</apex:page>
